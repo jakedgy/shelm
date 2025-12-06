@@ -381,6 +381,9 @@ func TestEvaluator_ShelmFunctions(t *testing.T) {
 	if err != nil {
 		t.Errorf("fromJson error: %v", err)
 	}
+	if !strings.Contains(result.(string), "a") {
+		t.Errorf("fromJson result should contain 'a': %v", result)
+	}
 
 	// Test toJson
 	result, err = eval.Eval(`toJson .Values.data`, ctx)

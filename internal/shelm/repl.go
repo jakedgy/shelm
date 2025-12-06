@@ -53,21 +53,21 @@ func (r *REPL) Run() {
 	go func() {
 		for range sigChan {
 			// On Ctrl+C, print newline and prompt
-			fmt.Fprintln(r.writer)
-			fmt.Fprint(r.writer, r.prompt)
+			_, _ = fmt.Fprintln(r.writer)
+			_, _ = fmt.Fprint(r.writer, r.prompt)
 		}
 	}()
 
 	for {
-		fmt.Fprint(r.writer, r.prompt)
+		_, _ = fmt.Fprint(r.writer, r.prompt)
 
 		line, err := r.reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				fmt.Fprintln(r.writer)
+				_, _ = fmt.Fprintln(r.writer)
 				break
 			}
-			fmt.Fprintf(r.writer, "ERROR: %v\n", err)
+			_, _ = fmt.Fprintf(r.writer, "ERROR: %v\n", err)
 			continue
 		}
 
@@ -91,9 +91,9 @@ func (r *REPL) processLine(line string) bool {
 	if strings.HasPrefix(line, ":") {
 		result := r.cmdHandler.Handle(line)
 		if result.Error != nil {
-			fmt.Fprintf(r.writer, "ERROR: %v\n", result.Error)
+			_, _ = fmt.Fprintf(r.writer, "ERROR: %v\n", result.Error)
 		} else if result.Output != "" {
-			fmt.Fprintln(r.writer, result.Output)
+			_, _ = fmt.Fprintln(r.writer, result.Output)
 		}
 		return result.ShouldExit
 	}
@@ -115,13 +115,13 @@ func (r *REPL) processLine(line string) bool {
 func (r *REPL) handleAssignment(name, expr string) {
 	result, err := r.eval.EvalAssignment(name, expr, r.ctx)
 	if err != nil {
-		fmt.Fprintf(r.writer, "ERROR: %v\n", err)
+		_, _ = fmt.Fprintf(r.writer, "ERROR: %v\n", err)
 		return
 	}
 
 	output := FormatOutput(result)
 	if output != "" {
-		fmt.Fprintln(r.writer, output)
+		_, _ = fmt.Fprintln(r.writer, output)
 	}
 }
 
@@ -129,13 +129,13 @@ func (r *REPL) handleAssignment(name, expr string) {
 func (r *REPL) handleExpression(expr string) {
 	result, err := r.eval.Eval(expr, r.ctx)
 	if err != nil {
-		fmt.Fprintf(r.writer, "ERROR: %v\n", err)
+		_, _ = fmt.Fprintf(r.writer, "ERROR: %v\n", err)
 		return
 	}
 
 	output := FormatOutput(result)
 	if output != "" {
-		fmt.Fprintln(r.writer, output)
+		_, _ = fmt.Fprintln(r.writer, output)
 	}
 }
 
