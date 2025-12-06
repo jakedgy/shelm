@@ -1,17 +1,20 @@
 package shelm
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/peterh/liner"
 )
 
 const (
 	DefaultPrompt = "shelm> "
+	HistoryFile   = ".shelm_history"
 )
 
 // assignmentPattern matches: identifier = expression
@@ -20,12 +23,13 @@ var assignmentPattern = regexp.MustCompile(`^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)
 
 // REPL represents the shelm REPL.
 type REPL struct {
-	ctx     *Context
-	eval    *Evaluator
+	ctx        *Context
+	eval       *Evaluator
 	cmdHandler *CommandHandler
-	prompt  string
-	reader  *bufio.Reader
-	writer  io.Writer
+	prompt     string
+	liner      *liner.State
+	writer     io.Writer
+	completer  *Completer
 }
 
 // NewREPL creates a new REPL instance.
@@ -34,35 +38,59 @@ func NewREPL() *REPL {
 	eval := NewEvaluator()
 	cmdHandler := NewCommandHandler(ctx, eval)
 
+	// Get all function names for completion
+	funcNames := GetFunctionNames()
+	completer := NewCompleter(ctx, funcNames)
+
 	return &REPL{
 		ctx:        ctx,
 		eval:       eval,
 		cmdHandler: cmdHandler,
 		prompt:     DefaultPrompt,
-		reader:     bufio.NewReader(os.Stdin),
 		writer:     os.Stdout,
+		completer:  completer,
 	}
 }
 
 // Run starts the REPL loop.
 func (r *REPL) Run() {
-	// Set up Ctrl+C handler
+	// Initialize liner
+	line := liner.NewLiner()
+	defer func() { _ = line.Close() }()
+	r.liner = line
+
+	// Set up tab completion using WordCompleter
+	line.SetWordCompleter(r.completer.Complete)
+
+	// Set completion style to print list (like bash)
+	line.SetTabCompletionStyle(liner.TabPrints)
+
+	// Enable Ctrl+C to abort current line
+	line.SetCtrlCAborts(true)
+
+	// Load history
+	r.loadHistory()
+	defer r.saveHistory()
+
+	// Set up signal handling for clean exit
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 
 	go func() {
-		for range sigChan {
-			// On Ctrl+C, print newline and prompt
-			_, _ = fmt.Fprintln(r.writer)
-			_, _ = fmt.Fprint(r.writer, r.prompt)
-		}
+		<-sigChan
+		r.saveHistory()
+		_ = line.Close()
+		os.Exit(0)
 	}()
 
 	for {
-		_, _ = fmt.Fprint(r.writer, r.prompt)
-
-		line, err := r.reader.ReadString('\n')
+		input, err := line.Prompt(r.prompt)
 		if err != nil {
+			if err == liner.ErrPromptAborted {
+				// Ctrl+C pressed, continue to next prompt
+				_, _ = fmt.Fprintln(r.writer)
+				continue
+			}
 			if err == io.EOF {
 				_, _ = fmt.Fprintln(r.writer)
 				break
@@ -71,13 +99,15 @@ func (r *REPL) Run() {
 			continue
 		}
 
-		line = strings.TrimSpace(line)
-
-		if line == "" {
+		input = strings.TrimSpace(input)
+		if input == "" {
 			continue
 		}
 
-		shouldExit := r.processLine(line)
+		// Add to history
+		line.AppendHistory(input)
+
+		shouldExit := r.processLine(input)
 		if shouldExit {
 			break
 		}
@@ -142,4 +172,40 @@ func (r *REPL) handleExpression(expr string) {
 // Context returns the REPL's context for testing.
 func (r *REPL) Context() *Context {
 	return r.ctx
+}
+
+// loadHistory loads command history from file.
+func (r *REPL) loadHistory() {
+	if r.liner == nil {
+		return
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+
+	histPath := filepath.Join(homeDir, HistoryFile)
+	if f, err := os.Open(histPath); err == nil {
+		_, _ = r.liner.ReadHistory(f)
+		_ = f.Close()
+	}
+}
+
+// saveHistory saves command history to file.
+func (r *REPL) saveHistory() {
+	if r.liner == nil {
+		return
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+
+	histPath := filepath.Join(homeDir, HistoryFile)
+	if f, err := os.Create(histPath); err == nil {
+		_, _ = r.liner.WriteHistory(f)
+		_ = f.Close()
+	}
 }

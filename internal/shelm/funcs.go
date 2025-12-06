@@ -104,3 +104,14 @@ func toPrettyJson(v any) (string, error) {
 	}
 	return string(data), nil
 }
+
+// GetFunctionNames returns a list of all available function names.
+// This includes all Sprig functions and shelm custom functions.
+func GetFunctionNames() []string {
+	funcMap := BuildFuncMap(nil)
+	names := make([]string, 0, len(funcMap))
+	for name := range funcMap {
+		names = append(names, name)
+	}
+	return names
+}

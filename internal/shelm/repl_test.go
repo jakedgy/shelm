@@ -279,8 +279,8 @@ func TestNewREPL(t *testing.T) {
 	if repl.prompt != DefaultPrompt {
 		t.Errorf("prompt = %q, want %q", repl.prompt, DefaultPrompt)
 	}
-	if repl.reader == nil {
-		t.Error("reader is nil")
+	if repl.completer == nil {
+		t.Error("completer is nil")
 	}
 	if repl.writer == nil {
 		t.Error("writer is nil")
