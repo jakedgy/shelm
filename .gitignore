@@ -1,0 +1,10 @@
+# Binaries
+/shelm
+*.exe
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+.DS_Store

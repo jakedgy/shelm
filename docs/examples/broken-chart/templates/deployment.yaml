@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name | default "myapp" }}
+  labels:
+    {{- range $key, $value := .Values.labels }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.name | default "myapp" }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name | default "myapp" }}
+    spec:
+      containers:
+        - name: {{ .Values.name | default "myapp" }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
+            - name: DB_HOST
+              value: {{ .Values.config.database.host }}
+            - name: DB_PORT
+              value: {{ .Values.config.database.port }}
+            - name: REDIS_URL
+              value: "redis://{{ .Values.config.redis.host }}:{{ .Values.config.redis.port }}"
+            - name: CACHE_ENABLED
+              value: {{ .Values.config.features.enableCache }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.config.features.enableMetrics }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.port }}
+          {{- end }}
