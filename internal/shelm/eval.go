@@ -7,7 +7,7 @@ import (
 	"text/template"
 )
 
-// identifierPattern matches a bare identifier that should be looked up in .Vars
+// identifierPattern matches a bare identifier that should be looked up in .Values
 var identifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // Evaluator handles template evaluation.
@@ -23,7 +23,7 @@ func NewEvaluator() *Evaluator {
 }
 
 // wrapExpression wraps an expression in {{ }} if not already a template.
-// If the expression is a bare identifier, it wraps it as a .Vars lookup.
+// If the expression is a bare identifier, it wraps it as a .Values lookup.
 func wrapExpression(expr string) string {
 	expr = strings.TrimSpace(expr)
 	if strings.Contains(expr, "{{") {
@@ -31,7 +31,7 @@ func wrapExpression(expr string) string {
 	}
 	// If it's a bare identifier, treat it as a variable lookup
 	if identifierPattern.MatchString(expr) {
-		return "{{ index .Vars \"" + expr + "\" }}"
+		return "{{ index .Values \"" + expr + "\" }}"
 	}
 	return "{{ " + expr + " }}"
 }
@@ -74,7 +74,7 @@ func (e *Evaluator) EvalAssignment(name, expr string, ctx *Context) (any, error)
 	wrapped := wrapAssignment(name, expr)
 
 	tmpl, err := template.New("assign").
-		Option("missingkey=error").
+		Option("missingkey=zero").
 		Funcs(funcMap).
 		Parse(wrapped)
 	if err != nil {
@@ -92,7 +92,7 @@ func (e *Evaluator) EvalAssignment(name, expr string, ctx *Context) (any, error)
 // evalTemplate executes a template string and returns the string output.
 func (e *Evaluator) evalTemplate(tmplStr string, ctx *Context) (any, error) {
 	tmpl, err := template.New("eval").
-		Option("missingkey=error").
+		Option("missingkey=zero").
 		Funcs(e.baseFuncMap).
 		Parse(tmplStr)
 	if err != nil {
@@ -110,7 +110,7 @@ func (e *Evaluator) evalTemplate(tmplStr string, ctx *Context) (any, error) {
 // EvalFile evaluates a template file against the given context.
 func (e *Evaluator) EvalFile(path string, ctx *Context) (string, error) {
 	tmpl, err := template.New("file").
-		Option("missingkey=error").
+		Option("missingkey=zero").
 		Funcs(e.baseFuncMap).
 		ParseFiles(path)
 	if err != nil {

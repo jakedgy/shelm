@@ -14,15 +14,15 @@ const helpText = `shelm - Sprig + text/template REPL
 
 Syntax:
   <expression>           Evaluate a template expression
-  name = <expression>    Assign result to variable
+  name = <expression>    Assign result to .Values
 
 Meta-commands:
   :help                  Show this help
-  :vars / :env           Display all variables
-  :set <name> <expr>     Set a variable
-  :unset <name>          Delete a variable
-  :load <file> [var]     Load YAML/JSON file into variable or merge into vars
-  :save <var> <file>     Save variable as YAML to file
+  :values                Display all values (.Values)
+  :set <name> <expr>     Set a value
+  :unset <name>          Delete a value
+  :load <file> [name]    Load YAML/JSON file into .Values (or .Values.<name>)
+  :save <name> <file>    Save .Values.<name> as YAML to file
   :template <file>       Execute template file
   :quit / :exit          Exit the REPL
 
@@ -74,8 +74,8 @@ func (h *CommandHandler) Handle(line string) CommandResult {
 	case "help":
 		return CommandResult{Output: helpText}
 
-	case "vars", "env":
-		return CommandResult{Output: FormatVars(h.ctx.Vars)}
+	case "values":
+		return CommandResult{Output: FormatValues(h.ctx.Values)}
 
 	case "set":
 		return h.handleSet(args)
@@ -166,10 +166,10 @@ func (h *CommandHandler) handleLoad(args []string) CommandResult {
 		h.ctx.Set(varName, parsed)
 		return CommandResult{Output: fmt.Sprintf("loaded %s into %s", path, varName)}
 	} else {
-		// Merge into vars (shallow merge)
+		// Merge into .Values (shallow merge)
 		if m, ok := parsed.(map[string]any); ok {
 			h.ctx.Merge(m)
-			return CommandResult{Output: fmt.Sprintf("merged %s into vars", path)}
+			return CommandResult{Output: fmt.Sprintf("merged %s into .Values", path)}
 		}
 		return CommandResult{Error: fmt.Errorf("cannot merge non-map data without a variable name")}
 	}

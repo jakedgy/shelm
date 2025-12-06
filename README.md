@@ -54,18 +54,18 @@ shelm> count = add 10 20
 30
 ```
 
-Variables are stored in `.Vars` and persist throughout the session.
+Variables are stored in `.Values` and persist throughout the session.
 
 ### Meta-Commands
 
 | Command | Description |
 |---------|-------------|
 | `:help` | Show help |
-| `:vars` / `:env` | Display all variables |
-| `:set <name> <expr>` | Set a variable |
-| `:unset <name>` | Delete a variable |
-| `:load <file> [var]` | Load YAML/JSON file |
-| `:save <var> <file>` | Save variable as YAML |
+| `:values` | Display all values |
+| `:set <name> <expr>` | Set a value |
+| `:unset <name>` | Delete a value |
+| `:load <file> [name]` | Load YAML/JSON file |
+| `:save <name> <file>` | Save value as YAML |
 | `:template <file>` | Execute template file |
 | `:quit` / `:exit` | Exit the REPL |
 
@@ -82,11 +82,11 @@ port: 8080
 name: myapp
 ```
 
-Or merge directly into vars:
+Or merge directly into .Values:
 
 ```
 shelm> :load config.yaml
-merged config.yaml into vars
+merged config.yaml into .Values
 ```
 
 Execute a template file:
@@ -120,15 +120,15 @@ shelm> foo = upper "hello"
 HELLO
 
 shelm> :load values.yaml
-merged values.yaml into vars
+merged values.yaml into .Values
 
-shelm> :vars
+shelm> :values
 foo: HELLO
 service:
     name: myapp
     port: 8080
 
-shelm> {{ dig "service" "port" 0 .Vars }}
+shelm> {{ dig "service" "port" 0 .Values }}
 8080
 
 shelm> :template config.tmpl
@@ -140,17 +140,26 @@ shelm> :quit
 
 ## Template Context
 
-Templates receive a context with:
+Templates receive a context with `.Values` - the same as Helm charts use.
 
-- `.Vars` - Map of all user-defined variables
-
-Access variables in templates:
+Access values in templates:
 
 ```
-{{ .Vars.myvar }}
-{{ index .Vars "my-var" }}
-{{ dig "nested" "key" "default" .Vars.config }}
+{{ .Values.myvar }}
+{{ index .Values "my-var" }}
+{{ dig "nested" "key" "default" .Values.config }}
 ```
+
+## Helm Template Debugging
+
+shelm is useful for debugging Helm chart templates. Load your values and test templates interactively:
+
+```
+shelm> :load mychart/values.yaml
+shelm> :template mychart/templates/deployment.yaml
+```
+
+See [docs/troubleshooting-helm-templates.md](docs/troubleshooting-helm-templates.md) for a complete guide.
 
 ## License
 

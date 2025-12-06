@@ -2,35 +2,35 @@ package shelm
 
 // Context is the execution context passed to templates as the dot (.) value.
 type Context struct {
-	Vars map[string]any `json:"vars" yaml:"vars"`
+	Values map[string]any `json:"values" yaml:"values"`
 }
 
-// NewContext creates a new Context with an initialized Vars map.
+// NewContext creates a new Context with an initialized Values map.
 func NewContext() *Context {
 	return &Context{
-		Vars: make(map[string]any),
+		Values: make(map[string]any),
 	}
 }
 
 // Set sets a variable in the context.
 func (c *Context) Set(name string, value any) {
-	c.Vars[name] = value
+	c.Values[name] = value
 }
 
 // Get retrieves a variable from the context.
 func (c *Context) Get(name string) (any, bool) {
-	v, ok := c.Vars[name]
+	v, ok := c.Values[name]
 	return v, ok
 }
 
 // Delete removes a variable from the context.
 func (c *Context) Delete(name string) {
-	delete(c.Vars, name)
+	delete(c.Values, name)
 }
 
-// Merge merges a map into the context's Vars (shallow merge).
+// Merge merges a map into the context's Values (shallow merge).
 func (c *Context) Merge(data map[string]any) {
 	for k, v := range data {
-		c.Vars[k] = v
+		c.Values[k] = v
 	}
 }

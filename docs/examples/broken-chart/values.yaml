@@ -1,0 +1,49 @@
+# Example Helm chart values with nested configuration
+replicaCount: 3
+
+image:
+  repository: myapp
+  tag: "1.2.3"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+config:
+  database:
+    host: postgres.default.svc
+    port: 5432
+    name: myapp_db
+  redis:
+    host: redis.default.svc
+    port: 6379
+  features:
+    enableCache: true
+    enableMetrics: false
+    rateLimit: 1000
+
+env:
+  - name: LOG_LEVEL
+    value: info
+  - name: APP_ENV
+    value: production
+
+ingress:
+  enabled: true
+  host: myapp.example.com
+  tls:
+    enabled: true
+    secretName: myapp-tls
+
+labels:
+  app.kubernetes.io/name: myapp
+  app.kubernetes.io/version: "1.2.3"

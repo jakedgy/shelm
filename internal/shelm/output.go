@@ -48,12 +48,12 @@ func isStructured(v any) bool {
 	}
 }
 
-// FormatVars formats the Vars map for display.
-func FormatVars(vars map[string]any) string {
-	if len(vars) == 0 {
-		return "(no variables set)"
+// FormatValues formats the Values map for display.
+func FormatValues(values map[string]any) string {
+	if len(values) == 0 {
+		return "(no values set)"
 	}
-	data, err := yaml.Marshal(vars)
+	data, err := yaml.Marshal(values)
 	if err != nil {
 		return fmt.Sprintf("ERROR: %v", err)
 	}
